@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Albion Market Orders</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f2f2f2; }
+    input { margin: 5px; padding: 10px; width: 140px; font-size: 16px; }
+    button { padding: 10px 15px; margin-top: 10px; font-size: 16px; }
+    #output { margin-top: 20px; padding: 15px; background: #fff; border-radius: 5px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h2>Albion Gold Market Maker</h2>
+
+  <label>Silver Balance: <input type="number" id="silver" placeholder="Enter silver"></label><br>
+  <label>Gold Balance: <input type="number" id="gold" placeholder="Enter gold"></label><br>
+  <label>Best Buy Price: <input type="number" id="bestBuy" placeholder="Enter best buy"></label><br>
+  <label>Best Sell Price: <input type="number" id="bestSell" placeholder="Enter best sell"></label><br>
+  <button onclick="calculateOrders()">Calculate Orders</button>
+
+  <div id="output"></div>
+
+  <script>
+    function calculateOrders() {
+      let silver = parseFloat(document.getElementById("silver").value);
+      let gold = parseFloat(document.getElementById("gold").value);
+      let bestBuy = parseFloat(document.getElementById("bestBuy").value);
+      let bestSell = parseFloat(document.getElementById("bestSell").value);
+
+      if (isNaN(silver) || isNaN(gold) || isNaN(bestBuy) || isNaN(bestSell)) {
+        document.getElementById("output").innerHTML = "Please enter all values!";
+        return;
+      }
+
+      const targetGoldFrac = 0.65;
+      const epsilon = 0.05;
+
+      const mid = (bestBuy + bestSell) / 2;
+      const buyPrice = Math.floor(mid * 0.995);
+      const sellPrice = Math.ceil(mid * 1.005);
+
+      const goldValue = gold * bestSell;
+      const totalValue = goldValue + silver;
+      const fG = totalValue > 0 ? goldValue / totalValue : 0;
+
+      let state, buyFraction, sellFraction;
+      if (fG < targetGoldFrac - epsilon) {
+        state = "Silver-heavy";
+        buyFraction = 0.40;
+        sellFraction = 0.15;
+      } else if (fG > targetGoldFrac + epsilon) {
+        state = "Gold-heavy";
+        buyFraction = 0.15;
+        sellFraction = 0.35;
+      } else {
+        state = "Balanced";
+        buyFraction = 0.35;
+        sellFraction = 0.25;
+      }
+
+      const buyAmount = Math.floor(buyFraction * silver / buyPrice);
+      const sellAmount = Math.floor(sellFraction * gold);
+
+      document.getElementById("output").innerHTML = `
+        <strong>Inventory State:</strong> ${state}<br>
+        <strong>Buy:</strong> ${buyAmount} gold @ ${buyPrice} silver<br>
+        <strong>Sell:</strong> ${sellAmount} gold @ ${sellPrice} silver
+      `;
+    }
+  </script>
+</body>
+</html>
