@@ -5,49 +5,412 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Albion Market Orders</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background: #f2f2f2; }
-    input { margin: 5px; padding: 10px; width: 140px; font-size: 16px; }
-    button { padding: 10px 15px; margin-top: 10px; font-size: 16px; }
-    #output { margin-top: 20px; padding: 15px; background: #fff; border-radius: 5px; font-size: 16px; }
+    body { font-family: Arial, sans-serif; padding: 20px; background: #0d1117; color: #e6edf3; }
+    input { margin: 5px; padding: 10px; width: 140px; font-size: 16px; background: #0f1419; color: #e6edf3; border: 1px solid #30363d; border-radius: 6px; outline: none; }
+    input::placeholder { color: #9aa5b1; }
+    button { padding: 10px 15px; margin-top: 10px; font-size: 16px; background: #21262d; color: #e6edf3; border: 1px solid #30363d; border-radius: 8px; }
+    #output { margin-top: 20px; padding: 15px; background: #0f1419; border: 1px solid #30363d; border-radius: 5px; font-size: 16px; }
+    #output:empty { display: none; }
+    .tile {
+      width: 33.33vw;
+      min-width: 320px;
+      max-width: 600px;
+      margin: 40px auto;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .tile h2 { margin-top: 0; }
+    .controls { display: flex; flex-direction: column; align-items: center; }
+    .controls label { display: block; }
+    .controls input[type="range"] { width: 100%; max-width: 260px; }
+    /* Margin preset buttons */
+    .preset-group { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 12px; }
+    .preset-btn {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #30363d;
+      background: #21262d;
+      color: #e6edf3;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .preset-btn:hover { background: #30363d; }
+    .preset-btn.active {
+      border-color: #1a73e8;
+      background: #1a73e8;
+      color: #fff;
+      box-shadow: 0 0 0 3px rgba(26,115,232,0.15) inset;
+    }
+    /* Tiny K/M/B buttons next to silver input */
+    .label-silver { position: relative; }
+    .tiny-group {
+      position: absolute;
+      right: -24px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .tiny-group .mini-btn {
+      padding: 0 4px;
+      font-size: 10px;
+      line-height: 1;
+      border: 1px solid #30363d;
+      background: #21262d;
+      color: #e6edf3;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 0;
+    }
+    .tiny-group .mini-btn:hover { background: #30363d; }
+    /* Instructions panel */
+    .instructions-toggle { margin-top: 16px; text-align: center; }
+    .instructions {
+      display: none;
+      margin: 12px auto;
+      text-align: left;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 16px;
+      max-width: 640px;
+    }
+    .instructions h3 { margin: 0 0 8px 0; }
+    .instructions p { margin: 6px 0; }
+    .flowchart { display: block; margin-top: 12px; }
+    .formulae { display: block; margin-top: 12px; }
+    /* Instruction tables */
+    .instructions table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    .instructions th, .instructions td { border: 1px solid #30363d; padding: 6px; text-align: center; font-size: 13px; }
+    .instructions th { background: #21262d; }
+    /* Aggressiveness toggle as buttons that fit text width */
+    .agg-wrap { margin-top: 12px; }
+    .agg-label { font-weight: 700; margin-bottom: 8px; }
+    .agg-group { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+    .agg-group input[type="radio"] { display: none; }
+    .agg-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 2px solid #30363d;
+      background: #21262d;
+      color: #e6edf3;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .agg-group input[type="radio"]:checked + .agg-btn {
+      border-color: #1a73e8;
+      background: #1a73e8;
+      color: #fff;
+      box-shadow: 0 0 0 3px rgba(26,115,232,0.15) inset;
+    }
+    /* Stack margin title/value above sliders */
+    .margin-group label { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+      .margin-group input[type="range"] { margin: 0 auto; }
+    .margin-group .margin-title { font-size: 12px; color: #9aa5b1; }
+    .margin-group .margin-value { font-weight: 600; color: #e6edf3; }
+    /* Dark sliders */
+    .controls input[type="range"]::-webkit-slider-runnable-track { background: #30363d; height: 6px; border-radius: 6px; }
+    .controls input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; background: #1a73e8; border: 2px solid #1a73e8; border-radius: 50%; margin-top: -4px; }
+    .controls input[type="range"]::-moz-range-track { background: #30363d; height: 6px; border-radius: 6px; }
+    .controls input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; background: #1a73e8; border: 2px solid #1a73e8; border-radius: 50%; }
   </style>
 </head>
 <body>
-  <h2>Albion Gold Market Maker</h2>
+  <div class="tile">
+    <h2>SkipeeMcGee's Gold Market Maker</h2>
 
-  <label>Silver Balance: <input type="number" id="silver" placeholder="Enter silver"></label><br>
-  <label>Gold Balance: <input type="number" id="gold" placeholder="Enter gold"></label><br>
-  <label>Best Buy Price: <input type="number" id="bestBuy" placeholder="Enter best buy"></label><br>
-  <label>Best Sell Price: <input type="number" id="bestSell" placeholder="Enter best sell"></label><br>
-  <div style="margin-top:10px;">
-    <label>Buy Price Margin (0.1%–1.25%):
-      <input type="range" id="buyMarginPct" min="0.1" max="1.25" step="0.05" value="0.5" oninput="updateMarginLabels()">
-      <span id="buyMarginLabel">0.50%</span>
-    </label><br>
-    <label>Sell Price Margin (0.1%–1.25%):
-      <input type="range" id="sellMarginPct" min="0.1" max="1.25" step="0.05" value="0.5" oninput="updateMarginLabels()">
-      <span id="sellMarginLabel">0.50%</span>
-    </label>
+    <div class="controls">
+      <label class="label-silver">Silver Balance: <input type="text" id="silver" placeholder="Enter silver">
+        <span class="tiny-group">
+          <button type="button" class="mini-btn" title="×1,000" tabindex="-1" onclick="applySilverMultiplier(1000)">K</button>
+          <button type="button" class="mini-btn" title="×1,000,000" tabindex="-1" onclick="applySilverMultiplier(1000000)">M</button>
+          <button type="button" class="mini-btn" title="×1,000,000,000" tabindex="-1" onclick="applySilverMultiplier(1000000000)">B</button>
+        </span>
+      </label>
+      <label>Gold Balance: <input type="text" id="gold" placeholder="Enter gold"></label>
+      <label>Gold Buy Price: <input type="text" id="bestBuy" placeholder="Enter buy price"></label>
+      <label>Gold Sell Price: <input type="text" id="bestSell" placeholder="Enter sell price"></label>
+      <div style="margin-top:10px;">
+        <div class="agg-wrap">
+          <div class="agg-label">Margins</div>
+          <div class="preset-group">
+            <button class="preset-btn" data-preset="tight-fast" onclick="setMarginPreset('tight-fast')">Tight</button>
+            <button class="preset-btn" data-preset="balanced" onclick="setMarginPreset('balanced')">Balanced</button>
+            <button class="preset-btn" data-preset="wide" onclick="setMarginPreset('wide')">Wide</button>
+            <button class="preset-btn" data-preset="trending-up" onclick="setMarginPreset('trending-up')">Trending Up</button>
+            <button class="preset-btn" data-preset="trending-down" onclick="setMarginPreset('trending-down')">Trending Down</button>
+          </div>
+          <div class="margin-group">
+            <label>
+              <span class="margin-title">Buy Price Margin</span>
+              <span class="margin-value" id="buyMarginLabel">0.50%</span>
+              <input type="range" id="buyMarginPct" min="0.1" max="1.25" step="0.05" value="0.5" oninput="updateMarginLabels()">
+            </label>
+            <label>
+              <span class="margin-title">Sell Price Margin</span>
+              <span class="margin-value" id="sellMarginLabel">0.50%</span>
+              <input type="range" id="sellMarginPct" min="0.1" max="1.25" step="0.05" value="0.5" oninput="updateMarginLabels()">
+            </label>
+          </div>
+        </div>
+        <div class="agg-wrap">
+          <div class="agg-label">Aggressiveness</div>
+          <div class="agg-group">
+            <input type="radio" id="agg-cons" name="aggMode" value="conservative">
+            <label for="agg-cons" class="agg-btn">Conservative</label>
+            <input type="radio" id="agg-bal" name="aggMode" value="balanced" checked>
+            <label for="agg-bal" class="agg-btn">Balanced</label>
+            <input type="radio" id="agg-agg" name="aggMode" value="aggressive">
+            <label for="agg-agg" class="agg-btn">Aggressive</label>
+            <input type="radio" id="agg-all" name="aggMode" value="all-in">
+            <label for="agg-all" class="agg-btn">All In</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button onclick="calculateOrders()">Calculate Orders</button>
+
+    <div id="output"></div>
   </div>
-  <button onclick="calculateOrders()">Calculate Orders</button>
 
-  <div id="output"></div>
+  <div class="instructions-toggle">
+    <button class="preset-btn" onclick="toggleInstructions()">Instructions</button>
+  </div>
+  <div id="instructions" class="instructions">
+    <h3>How to Use</h3>
+    <ol>
+      <li>Cancel any active gold buy/sell orders, enter current silver and gold balance, select desired presets based on current market conditions.</li>
+      <li>Click "Calculate Orders" to compute prices and quantities</li>
+      <li>Place suggested buy and sell orders with 1 day duration.</li>
+      <li>Wait for orders to fill</li>
+      <li>When one or both orders fill or if neither order fills after 12-24 hours, adjust presets or sliders and repeat from Step 1.</li>
+    </ol>
+    <h3>Presets</h3>
+    <p><strong>Margins</strong> set margin percentages fast:</p>
+    <ul>
+      <li><strong>Tight</strong>: ~0.15%/0.15% — small margin, fast fills; best for stable markets.</li>
+      <li><strong>Balanced</strong>: 0.50%/0.50% — medium margin, best for moderate markets.</li>
+      <li><strong>Wide</strong>: 1.10%/1.10% — bigger edge; slower fills, higher profit per cycle.</li>
+      <li><strong>Trending Up</strong>: 0.25% buy / 0.80% sell — accumulate on dips, let winners run.</li>
+      <li><strong>Trending Down</strong>: 0.80% buy / 0.25% sell — widen buys to catch value, exit quicker.</li>
+    </ul>
+    <p><strong>Aggressiveness</strong> scales inventory usage:</p>
+    <ul>
+      <li><strong>Conservative</strong> (~60% of base): Prioritizes safety; lower daily turnover.</li>
+      <li><strong>Balanced</strong> (100% of base): Neutral usage; matches base strategy.</li>
+      <li><strong>Aggressive</strong> (~170% of base): High Risk, high reward.</li>
+      <li><strong>All In</strong> (100% inventory): Suggests full silver into buys and full gold into sells, regardless of state. Not recommended for risk-averse users.</li>
+    </ul>
+    <h3>Inventory Usage by Mode</h3>
+    <p>Exact daily inventory usage fractions by state and aggressiveness are reduced or increased to within 5%–90% if needed:</p>
+        <p>Base fractions: Silver-heavy 40%/15%, Balanced 35%/25%, Gold-heavy 15%/35%. Conservative scales ×0.60, Balanced ×1.00, Aggressive ×1.70, All In sets both sides to 100% regardless of state.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Mode</th>
+          <th>Silver-heavy<br>(Buy / Sell)</th>
+          <th>Balanced<br>(Buy / Sell)</th>
+          <th>Gold-heavy<br>(Buy / Sell)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Conservative</td>
+          <td>24% / 9%</td>
+          <td>21% / 15%</td>
+          <td>9% / 21%</td>
+        </tr>
+        <tr>
+          <td>Balanced</td>
+          <td>40% / 15%</td>
+          <td>35% / 25%</td>
+          <td>15% / 35%</td>
+        </tr>
+        <tr>
+          <td>Aggressive</td>
+          <td>68% / 25.5%</td>
+          <td>59.5% / 42.5%</td>
+          <td>25.5% / 59.5%</td>
+        </tr>
+        <tr>
+          <td>All In</td>
+          <td>100% / 100%</td>
+          <td>100% / 100%</td>
+          <td>100% / 100%</td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <h3>Algorithm</h3>
+    <p>We take the market’s midpoint, place buys a bit below and sells a bit above using your percentages, then check how much of your wealth is in gold versus silver. If you’re gold‑heavy we suggest selling more; if you’re silver‑heavy we suggest buying more. Your aggressiveness setting scales how much you trade per day, and All In means use everything.</p>
+      <svg class="formulae" width="640" height="300" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <style>
+            .f-label { font-family: Arial, sans-serif; font-size:12px; }
+            .eq { font-family: Arial, sans-serif; font-size:14px; }
+            .panel { fill:#fafafa; stroke:#999; stroke-width:1.2px; rx:6; }
+          </style>
+        </defs>
+        <!-- Pricing -->
+        <rect class="panel" x="20" y="20" width="280" height="110" />
+        <text class="f-label" x="30" y="40">Pricing</text>
+        <text class="eq" x="30" y="65">mid = (GoldBuy + GoldSell) / 2</text>
+        <text class="eq" x="30" y="90">P_buy = floor(mid × (1 − m_buy))</text>
+        <text class="eq" x="30" y="115">P_sell = ceil(mid × (1 + m_sell))</text>
+
+        <!-- Portfolio -->
+        <rect class="panel" x="330" y="20" width="280" height="110" />
+        <text class="f-label" x="340" y="40">Portfolio</text>
+        <text class="eq" x="340" y="65">V_gold = gold × GoldSell</text>
+        <text class="eq" x="340" y="90">V_total = V_gold + silver</text>
+        <text class="eq" x="340" y="115">f_G = V_gold / V_total</text>
+
+        <!-- Allocation -->
+        <rect class="panel" x="20" y="150" width="590" height="150" />
+        <text class="f-label" x="30" y="170">Allocation</text>
+        <text class="eq" x="30" y="195">state = { Silver-heavy if f_G < 0.60, Balanced if 0.60 ≤ f_G ≤ 0.70, Gold-heavy if f_G > 0.70 }</text>
+        <text class="eq" x="30" y="220">base(buy,sell) = { 0.40/0.15 (Silver-heavy), 0.35/0.25 (Balanced), 0.15/0.35 (Gold-heavy) }</text>
+        <text class="eq" x="30" y="245">scaled(buy,sell) = modeScale × base  (All In → 1.0/1.0)</text>
+        <text class="eq" x="30" y="270">BuyAmt = floor(scaled_buy × silver / P_buy),  SellAmt = floor(scaled_sell × gold)</text>
+      </svg>
+  </div>
 
   <script>
     function formatNumber(n) {
       return Math.floor(n).toLocaleString('en-US');
+    }
+    function parseNumberWithSuffix(val) {
+      if (val === null || val === undefined) return 0;
+      const s = String(val).trim().toLowerCase().replace(/,/g, '').replace(/\s+/g, '');
+      if (s === '') return 0;
+      const m = s.match(/^([+-]?\d*\.?\d+)([kmb])?$/);
+      if (!m) {
+        const num = Number(s);
+        return isNaN(num) ? 0 : num;
+      }
+      let num = parseFloat(m[1]);
+      const suf = m[2];
+      if (suf === 'k') num *= 1e3;
+      else if (suf === 'm') num *= 1e6;
+      else if (suf === 'b') num *= 1e9;
+      return num;
     }
     function updateMarginLabels() {
       const b = parseFloat(document.getElementById("buyMarginPct").value) || 0;
       const s = parseFloat(document.getElementById("sellMarginPct").value) || 0;
       document.getElementById("buyMarginLabel").textContent = b.toFixed(2) + "%";
       document.getElementById("sellMarginLabel").textContent = s.toFixed(2) + "%";
+      updatePresetHighlight();
+    }
+
+    function updatePresetHighlight() {
+      const normalizePct = (v) => Number((parseFloat(v) || 0).toFixed(2));
+      const b = normalizePct(document.getElementById("buyMarginPct").value);
+      const s = normalizePct(document.getElementById("sellMarginPct").value);
+      const presets = {
+        'tight-fast': { buy: 0.15, sell: 0.15 },
+        'balanced': { buy: 0.50, sell: 0.50 },
+        'wide': { buy: 1.10, sell: 1.10 },
+        'trending-up': { buy: 0.25, sell: 0.80 },
+        'trending-down': { buy: 0.80, sell: 0.25 }
+      };
+      let matched = null;
+      for (const [key, p] of Object.entries(presets)) {
+        if (normalizePct(p.buy) === b && normalizePct(p.sell) === s) {
+          matched = key;
+          break;
+        }
+      }
+      const buttons = document.querySelectorAll('.preset-group [data-preset]');
+      buttons.forEach(btn => {
+        if (matched && btn.getAttribute('data-preset') === matched) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      updateMarginLabels();
+      const ids = ['silver','gold','bestBuy','bestSell'];
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('blur', () => {
+          const v = parseNumberWithSuffix(el.value);
+          if (!isNaN(v)) el.value = Math.floor(v);
+        });
+      });
+    });
+
+    function toggleInstructions() {
+      const el = document.getElementById("instructions");
+      if (!el) return;
+      el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+    }
+
+    function applySilverMultiplier(mult) {
+      const el = document.getElementById("silver");
+      const val = parseNumberWithSuffix(el.value);
+      if (isNaN(val)) { return; }
+      const result = Math.floor(val * mult);
+      el.value = result;
+    }
+
+    function setMarginPreset(name) {
+      const presets = {
+        'tight-fast': { buy: 0.15, sell: 0.15 },
+        'balanced': { buy: 0.50, sell: 0.50 },
+        'wide': { buy: 1.10, sell: 1.10 },
+        'trending-up': { buy: 0.25, sell: 0.80 },
+        'trending-down': { buy: 0.80, sell: 0.25 }
+      };
+      const p = presets[name] || presets['balanced'];
+      const buyEl = document.getElementById("buyMarginPct");
+      const sellEl = document.getElementById("sellMarginPct");
+      buyEl.value = p.buy;
+      sellEl.value = p.sell;
+      updateMarginLabels();
+    }
+
+    function getAggressivenessMode() {
+      const selected = document.querySelector('input[name="aggMode"]:checked');
+      return selected ? selected.value : 'balanced';
+    }
+
+    function scaleFractionsByMode(buyFrac, sellFrac, mode) {
+      if (mode === 'all-in') {
+        return { buy: 1.0, sell: 1.0 };
+      }
+      const scaleMap = { conservative: 0.6, balanced: 1.0, aggressive: 1.7 };
+      const clamp = (x, min, max) => Math.max(min, Math.min(x, max));
+      const scale = scaleMap[mode] || 1.0;
+      const scaledBuy = clamp(buyFrac * scale, 0.05, 0.90);
+      const scaledSell = clamp(sellFrac * scale, 0.05, 0.90);
+      return { buy: scaledBuy, sell: scaledSell };
     }
 
     function calculateOrders() {
-      let silver = parseFloat(document.getElementById("silver").value);
-      let gold = parseFloat(document.getElementById("gold").value);
-      let bestBuy = parseFloat(document.getElementById("bestBuy").value);
-      let bestSell = parseFloat(document.getElementById("bestSell").value);
+      let silver = parseNumberWithSuffix(document.getElementById("silver").value);
+      let gold = parseNumberWithSuffix(document.getElementById("gold").value);
+      let bestBuy = parseNumberWithSuffix(document.getElementById("bestBuy").value);
+      let bestSell = parseNumberWithSuffix(document.getElementById("bestSell").value);
       let buyMarginPct = parseFloat(document.getElementById("buyMarginPct").value);
       let sellMarginPct = parseFloat(document.getElementById("sellMarginPct").value);
 
@@ -84,12 +447,16 @@
         sellFraction = 0.25;
       }
 
-      const buyAmount = Math.floor(buyFraction * silver / buyPrice);
-      const sellAmount = Math.floor(sellFraction * gold);
+      const mode = getAggressivenessMode();
+      const scaled = scaleFractionsByMode(buyFraction, sellFraction, mode);
+
+      const buyAmount = Math.floor(scaled.buy * silver / buyPrice);
+      const sellAmount = Math.floor(scaled.sell * gold);
 
       document.getElementById("output").innerHTML = `
         <strong>Total Value:</strong> ${formatNumber(totalValue)} silver<br>
         <strong>Inventory State:</strong> ${state}<br>
+        <strong>Aggressiveness Mode:</strong> ${mode.charAt(0).toUpperCase() + mode.slice(1)}<br>
         <strong>Buy:</strong> ${buyAmount} gold @ ${buyPrice} silver<br>
         <strong>Sell:</strong> ${sellAmount} gold @ ${sellPrice} silver
       `;
