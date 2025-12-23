@@ -9,6 +9,38 @@
     input { margin: 5px; padding: 10px; width: 140px; font-size: 16px; background: #0f1419; color: #e6edf3; border: 1px solid #30363d; border-radius: 6px; outline: none; }
     input::placeholder { color: #9aa5b1; }
     button { padding: 10px 15px; margin-top: 10px; font-size: 16px; background: #21262d; color: #e6edf3; border: 1px solid #30363d; border-radius: 8px; }
+    /* Gold CTA button */
+    .cta-gold {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(180deg, #f5d76e 0%, #d9a427 100%);
+      color: #0d1117;
+      border: 1px solid #b38600;
+      box-shadow: 0 4px 12px rgba(217, 164, 39, 0.25);
+      transition: transform 0.05s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+    .cta-gold::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+      top: 0;
+      left: -120%;
+      width: 40%;
+      height: 100%;
+      background: linear-gradient(120deg, rgba(255,255,255,0.35), rgba(255,255,255,0));
+      transform: skewX(-20deg);
+      transition: left 0.6s ease;
+    }
+    .cta-gold:hover {
+      background: linear-gradient(180deg, #ffe28a 0%, #d9a427 100%);
+      box-shadow: 0 6px 16px rgba(217, 164, 39, 0.35);
+    }
+    .cta-gold:hover::after { left: 130%; }
+    .cta-gold:active {
+      transform: translateY(1px);
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.25), 0 2px 6px rgba(0,0,0,0.2);
+    }
+    .cta-gold:focus { outline: none; box-shadow: 0 0 0 3px rgba(245,215,110,0.35), 0 6px 16px rgba(217,164,39,0.35); }
     #output { margin-top: 20px; padding: 15px; background: #0f1419; border: 1px solid #30363d; border-radius: 5px; font-size: 16px; }
     #output:empty { display: none; }
     .tile {
@@ -182,7 +214,7 @@
       </div>
     </div>
 
-    <button onclick="calculateOrders()">Calculate Orders</button>
+    <button class="cta-gold" onclick="calculateOrders()">Calculate Orders</button>
 
     <div id="output"></div>
   </div>
