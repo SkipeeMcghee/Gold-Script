@@ -158,6 +158,10 @@
     .controls input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; background: #1a73e8; border: 2px solid #1a73e8; border-radius: 50%; margin-top: -4px; }
     .controls input[type="range"]::-moz-range-track { background: #30363d; height: 6px; border-radius: 6px; }
     .controls input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; background: #1a73e8; border: 2px solid #1a73e8; border-radius: 50%; }
+    /* Footer tip link */
+    .footer-tip { margin: 24px auto 0; text-align: center; font-size: 13px; color: #9aa5b1; }
+    .footer-tip a { color: #e6edf3; text-decoration: none; border-bottom: 1px dashed #9aa5b1; }
+    .footer-tip a:hover { color: #ffe28a; border-bottom-color: #ffe28a; }
   </style>
 </head>
 <body>
@@ -320,6 +324,10 @@
         <text class="eq" x="30" y="245">scaled(buy,sell) = modeScale × base  (All In → 1.0/1.0)</text>
         <text class="eq" x="30" y="270">BuyAmt = floor(scaled_buy × silver / P_buy),  SellAmt = floor(scaled_sell × gold)</text>
       </svg>
+  </div>
+
+  <div class="footer-tip">
+    <a href="https://buymeacoffee.com/skipeemcgee" target="_blank" rel="noopener">Leave me a tip</a>
   </div>
 
   <script>
