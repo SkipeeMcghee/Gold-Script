@@ -439,10 +439,12 @@
         return { buy: 1.0, sell: 1.0 };
       }
       const scaleMap = { conservative: 0.6, balanced: 1.0, aggressive: 1.7 };
+      const modeMinMap = { conservative: 0.09, balanced: 0.15, aggressive: 0.255 };
       const clamp = (x, min, max) => Math.max(min, Math.min(x, max));
       const scale = scaleMap[mode] || 1.0;
-      const scaledBuy = clamp(buyFrac * scale, 0.05, 0.90);
-      const scaledSell = clamp(sellFrac * scale, 0.05, 0.90);
+      const minFloor = modeMinMap[mode] ?? 0.15; // default to balanced minimum
+      const scaledBuy = clamp(buyFrac * scale, minFloor, 0.90);
+      const scaledSell = clamp(sellFrac * scale, minFloor, 0.90);
       return { buy: scaledBuy, sell: scaledSell };
     }
 
@@ -490,8 +492,22 @@
       const mode = getAggressivenessMode();
       const scaled = scaleFractionsByMode(buyFraction, sellFraction, mode);
 
-      const buyAmount = Math.floor(scaled.buy * silver / buyPrice);
-      const sellAmount = Math.floor(scaled.sell * gold);
+      const buyAmountBase = Math.floor(scaled.buy * silver / buyPrice);
+      const sellAmountBase = Math.floor(scaled.sell * gold);
+
+      let buyAmount = buyAmountBase;
+      let sellAmount = sellAmountBase;
+      // Suggest at least 1 unit per side if affordable
+      if (silver >= buyPrice) {
+        if (buyAmount < 1) buyAmount = 1;
+      } else {
+        buyAmount = 0; // cannot afford 1 gold
+      }
+      if (gold >= 1) {
+        if (sellAmount < 1) sellAmount = 1;
+      } else {
+        sellAmount = 0; // less than 1 gold to sell
+      }
 
       document.getElementById("output").innerHTML = `
         <strong>Total Value:</strong> ${formatNumber(totalValue)} silver<br>
